@@ -64,7 +64,28 @@ const authUser = asyncHandler(async (req, res) => {
   }
 });
 
+//@description     Get or Search all users
+//@route           GET /api/user?search=
+//@access          Public
+const allUsers = asyncHandler(async (req, res) => {
+  console.log("inside ===>");
+  const keyword = req.query.search
+    ? {
+        $or: [
+          { name: { $regex: req.query.search, $options: "i" } },
+          { email: { $regex: req.query.search, $options: "i" } },
+        ],
+      }
+    : {};
+
+  const users = await User.find(keyword).find({ _id: { $ne: req.user._id } });
+
+  console.log("searched users ===>", users);
+  res.send(users);
+});
+
 module.exports = {
   registerUser,
   authUser,
+  allUsers,
 };
