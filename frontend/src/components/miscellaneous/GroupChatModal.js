@@ -64,7 +64,6 @@ const GroupChatModal = ({ children }) => {
         `/api/users/all?search=${search}`,
         config
       );
-      console.log(data);
       setLoading(false);
       setSearchResult(data);
       setSearch("");
