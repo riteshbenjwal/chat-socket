@@ -31,6 +31,50 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`Server Running at ${PORT}`.yellow.bold);
+const server = app.listen(
+  PORT,
+  console.log(`Server running on PORT ${PORT}...`.yellow.bold)
+);
+
+const io = require("socket.io")(server, {
+  pingTimeout: 60000,
+  cors: {
+    origin: "http://localhost:3000",
+  },
+});
+
+io.on("connection", (socket) => {
+  console.log("connected to socket");
+
+  socket.on("setup", (userData) => {
+    socket.join(userData._id);
+    socket.emit("connected");
+  });
+
+  socket.on("joinChat", (room) => {
+    socket.join(room);
+    console.log("user joined Room: ", room);
+  });
+
+  socket.on("typing", (room) => {
+    socket.in(room).emit("typing");
+  });
+
+  socket.on("stopTyping", (room) => {
+    socket.in(room).emit("stopTyping");
+  });
+
+  socket.on("newMessage", (newMessageRecieved) => {
+    var chat = newMessageRecieved.chat;
+    if (!chat.users) return console.log("Chat.users not defined");
+    chat.users.forEach((user) => {
+      if (user._id == newMessageRecieved.sender._id) return;
+      socket.in(user._id).emit("messageReceived", newMessageRecieved);
+    });
+  });
+
+  socket.off("setup", (userData) => {
+    console.log("User disconnected from socket");
+    socket.leave(userData._id);
+  });
 });
